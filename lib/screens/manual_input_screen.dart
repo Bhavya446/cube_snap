@@ -3,6 +3,7 @@ import '../utils/constants.dart';
 import '../widgets/cube_face_editor.dart';
 import '../logic/cube_converter.dart';
 import '../logic/kociemba_solver.dart';
+import '../logic/solve_history.dart';   // <-- ADDED
 import 'solution_screen.dart';
 
 class ManualInputScreen extends StatefulWidget {
@@ -13,9 +14,8 @@ class ManualInputScreen extends StatefulWidget {
 }
 
 class _ManualInputScreenState extends State<ManualInputScreen> {
-  int currentFace = 0; // 0..5 => U,R,F,D,L,B
+  int currentFace = 0;
 
-  /// 6 faces × 9 stickers each. Each value is an index into kColorPalette.
   final List<List<int>> cubeFaces =
   List.generate(6, (_) => List.filled(9, 0));
 
@@ -36,7 +36,7 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
   }
 
   void _resetCurrentFace() {
-    final colorIndex = cubeFaces[currentFace][4]; // center color
+    final colorIndex = cubeFaces[currentFace][4];
     for (int i = 0; i < 9; i++) {
       cubeFaces[currentFace][i] = colorIndex;
     }
@@ -63,12 +63,19 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
     String solution;
     try {
       solution = await KociembaSolver.solve(cubeString);
+
+      // 🌟 SAVE SOLVE HISTORY HERE
+      await SolveHistoryService.saveSolve(
+        cubeString: cubeString,
+        solution: solution,
+      );
+
     } catch (e) {
       solution = "Error while solving cube: $e";
     }
 
     if (mounted) {
-      Navigator.pop(context); // close progress dialog
+      Navigator.pop(context);
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -94,13 +101,11 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
             children: [
               Text(
                 faceLabel,
-                style:
-                const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text("Face ${currentFace + 1} of 6"),
               const SizedBox(height: 16),
 
-              // Face editor
               CubeFaceEditor(
                 faceValues: cubeFaces[currentFace],
                 onTileTap: (index) {
@@ -114,22 +119,19 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
 
               const SizedBox(height: 16),
 
-              // Face navigation buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: currentFace == 0
-                        ? null
-                        : () => setState(() => currentFace--),
+                    onPressed:
+                    currentFace == 0 ? null : () => setState(() => currentFace--),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text("Prev"),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton.icon(
-                    onPressed: currentFace == 5
-                        ? null
-                        : () => setState(() => currentFace++),
+                    onPressed:
+                    currentFace == 5 ? null : () => setState(() => currentFace++),
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text("Next"),
                   ),
@@ -156,7 +158,6 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
 
               const SizedBox(height: 16),
 
-              // Color legend
               const Text("Tap tiles to cycle through colors:"),
               const SizedBox(height: 8),
               Wrap(

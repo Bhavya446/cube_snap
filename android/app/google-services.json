@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "223687931206",
+    "firebase_url": "https://cubesnap-6166d-default-rtdb.firebaseio.com",
+    "project_id": "cubesnap-6166d",
+    "storage_bucket": "cubesnap-6166d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:223687931206:android:28d5a57023666640f7e147",
+        "android_client_info": {
+          "package_name": "com.example.cube_snap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh-hTa3-hzfQCsHQkqGD4OtwTyQwSWbBA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

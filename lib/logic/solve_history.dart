@@ -1,24 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SolveHistoryService {
+class SolveHistory {
+  static final FirebaseFirestore _db = FirebaseFirestore.instance;
+
   static Future<void> saveSolve({
-    required String cubeString,
+    required String scramble, // we store cubeString here
     required String solution,
+    required DateTime timestamp,
   }) async {
-    final moveCount = solution.split(' ').length;
-
-    await FirebaseFirestore.instance.collection('solutions').add({
-      'cubeString': cubeString,
-      'solution': solution,
-      'moveCount': moveCount,
-      'timestamp': DateTime.now(),
+    await _db.collection("solve_history").add({
+      "scramble": scramble,
+      "solution": solution,
+      "timestamp": timestamp.toIso8601String(),
     });
-  }
-
-  static Stream<QuerySnapshot> getSolveHistory() {
-    return FirebaseFirestore.instance
-        .collection('solutions')
-        .orderBy('timestamp', descending: true)
-        .snapshots();
   }
 }

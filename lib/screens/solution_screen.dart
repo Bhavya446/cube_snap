@@ -1,5 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../utils/constants.dart';
 
 class SolutionScreen extends StatefulWidget {
@@ -17,97 +18,61 @@ class SolutionScreen extends StatefulWidget {
 }
 
 class _SolutionScreenState extends State<SolutionScreen> {
-  late final bool _isError;
-  late final List<String> _steps;
-
-  int _currentStepIndex = 0;
-  bool _isPlaying = false;
-  Timer? _timer;
+  late final List<String> _tokens;
+  int _currentIndex = 0;
+  bool _autoPlay = false;
 
   @override
   void initState() {
     super.initState();
+    _tokens = _parseMoves(widget.moves);
+  }
 
-    _isError = widget.moves.startsWith("Error");
+  void _haptic() => HapticFeedback.lightImpact();
 
-    if (_isError) {
-      _steps = widget.moves.split(" ");
-    } else {
-      _steps = widget.moves
-          .split(RegExp(r'\s+'))
-          .where((m) => m.trim().isNotEmpty)
-          .toList();
+  List<String> _parseMoves(String raw) {
+    // If it's an error from backend, just split by space
+    if (raw.toLowerCase().contains("error")) {
+      return raw.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    }
+
+    final parts =
+    raw.replaceAll('\n', ' ').trim().split(RegExp(r'\s+')).toList();
+    return parts.isEmpty ? ["(no moves)"] : parts;
+  }
+
+  bool get _isError => widget.moves.toLowerCase().contains("error");
+
+  void _next() {
+    if (_currentIndex < _tokens.length - 1) {
+      setState(() => _currentIndex++);
+      _haptic();
     }
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _goToStep(int index) {
-    if (_isError) return;
-    setState(() {
-      _currentStepIndex = index.clamp(0, _steps.length - 1);
-    });
-  }
-
-  void _nextStep() {
-    if (_isError) return;
-    if (_currentStepIndex < _steps.length - 1) {
-      _goToStep(_currentStepIndex + 1);
-    } else {
-      _stopAutoPlay();
+  void _prev() {
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex--);
+      _haptic();
     }
-  }
-
-  void _prevStep() {
-    if (_isError) return;
-    if (_currentStepIndex > 0) {
-      _goToStep(_currentStepIndex - 1);
-    }
-  }
-
-  void _startAutoPlay() {
-    if (_isError || _steps.isEmpty) return;
-    _timer?.cancel();
-    _isPlaying = true;
-    _timer = Timer.periodic(const Duration(milliseconds: 800), (_) {
-      if (!mounted) return;
-      if (_currentStepIndex >= _steps.length - 1) {
-        _stopAutoPlay();
-      } else {
-        _nextStep();
-      }
-    });
-    setState(() {});
-  }
-
-  void _stopAutoPlay() {
-    _timer?.cancel();
-    _isPlaying = false;
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalSteps = _steps.length;
-    final currentStepText =
-    (_isError || totalSteps == 0) ? "0" : (_currentStepIndex + 1).toString();
+    final stepText =
+        "${_tokens.isEmpty ? 0 : _currentIndex + 1} of ${_tokens.length}";
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: kMainBackgroundGradient),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- Header ---
-                Row(
+          child: Column(
+            children: [
+              // AppBar style
+              Padding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new,
@@ -125,230 +90,232 @@ class _SolutionScreenState extends State<SolutionScreen> {
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 18),
-
-                const Text(
-                  "Solution Moves:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // --- Glass card for moves/error text ---
-                Container(
-                  width: double.infinity,
+              Expanded(
+                child: SingleChildScrollView(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: kCardColor.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.06),
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black54,
-                        offset: Offset(0, 10),
-                        blurRadius: 18,
-                      )
-                    ],
-                  ),
-                  child: _isError
-                      ? Text(
-                    widget.moves,
-                    style: const TextStyle(
-                      color: kDangerColor,
-                      fontSize: 15,
-                      height: 1.4,
-                    ),
-                  )
-                      : Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _steps
-                        .map(
-                          (m) => Chip(
-                        backgroundColor: Colors.white10,
-                        label: Text(
-                          m,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    )
-                        .toList(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                if (!_isError) ...[
-                  Text(
-                    "Step $currentStepText of $totalSteps",
-                    style: const TextStyle(
-                      color: kSoftTextColor,
-                      fontSize: 14,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // --- Player Controls ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton.filledTonal(
-                        onPressed: _prevStep,
-                        icon: const Icon(Icons.skip_previous),
-                        color: Colors.white,
-                        tooltip: "Previous move",
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _isPlaying ? _stopAutoPlay : _startAutoPlay,
-                        child: Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [kPrimaryColor, kAccentColor],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            shape: BoxShape.circle,
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black54,
-                                blurRadius: 16,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            _isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                            size: 36,
-                          ),
+                      const Text(
+                        "Solution Moves:",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      IconButton.filledTonal(
-                        onPressed: _nextStep,
-                        icon: const Icon(Icons.skip_next),
-                        color: Colors.white,
-                        tooltip: "Next move",
-                      ),
-                    ],
-                  ),
+                      const SizedBox(height: 12),
 
-                  const SizedBox(height: 14),
-
-                  // --- Current move big display ---
-                  if (totalSteps > 0)
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
+                      // Glass card with chips
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.12),
+                          color: kCardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white12),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black54,
+                              blurRadius: 18,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _tokens
+                              .map(
+                                (m) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: _tokens.indexOf(m) == _currentIndex
+                                    ? kPrimaryColor.withOpacity(0.2)
+                                    : Colors.white.withOpacity(0.04),
+                                border: Border.all(
+                                  color: _tokens.indexOf(m) ==
+                                      _currentIndex
+                                      ? kPrimaryColor
+                                      : Colors.white12,
+                                ),
+                              ),
+                              child: Text(
+                                m,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                              .toList(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Step control
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Step $_currentIndex of ${_tokens.length}",
+                            style: const TextStyle(
+                                color: kSoftTextColor, fontSize: 13),
                           ),
+                          Text(
+                            stepText,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.skip_previous,
+                                color: Colors.white),
+                            onPressed: _prev,
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () {
+                              _haptic();
+                              setState(() => _autoPlay = !_autoPlay);
+                              // autoplay animation logic can be added later
+                            },
+                            child: AnimatedContainer(
+                              duration:
+                              const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 40, vertical: 12),
+                              decoration: BoxDecoration(
+                                color:
+                                _autoPlay ? kPrimaryColor : kCardColor,
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(color: Colors.white12),
+                              ),
+                              child: Text(
+                                _autoPlay ? "Pause (demo)" : "Play (demo)",
+                                style: TextStyle(
+                                  color: _autoPlay
+                                      ? Colors.black
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.skip_next,
+                                color: Colors.white),
+                            onPressed: _next,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Explanation
+                      const Text(
+                        "Explanation:",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "• Each letter represents a face.\n"
+                            "• A letter alone = clockwise 90° turn.\n"
+                            "• Letter + `'` = counter-clockwise 90° turn.\n"
+                            "• Letter + `2` = 180° rotation.\n\n"
+                            "Faces:\n"
+                            "• U = Up (top)\n"
+                            "• D = Down (bottom)\n"
+                            "• L = Left\n"
+                            "• R = Right\n"
+                            "• F = Front\n"
+                            "• B = Back",
+                        style: TextStyle(
+                          color: kSoftTextColor,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Cube string debug
+                      const Text(
+                        "Internal cube string (URFDLB):",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white12),
                         ),
                         child: Text(
-                          _steps[_currentStepIndex],
+                          widget.cubeString,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
+                            color: kSoftTextColor,
+                            fontSize: 12,
                           ),
                         ),
                       ),
-                    ),
 
-                  const SizedBox(height: 20),
-                ],
+                      if (_isError) ...[
+                        const SizedBox(height: 18),
+                        const Text(
+                          "Why did this fail?",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          "The solver said the cubestring is invalid. "
+                              "Check that:\n"
+                              "• Each face has exactly 9 stickers.\n"
+                              "• Each color is used exactly 9 times.\n"
+                              "• Centers match the real cube's center colors.",
+                          style: TextStyle(
+                            color: kSoftTextColor,
+                            fontSize: 13,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
 
-                // --- Explanation panel ---
-                const Text(
-                  "Explanation:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
+                      const SizedBox(height: 28),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  "• Each letter represents a face.\n"
-                      "• A letter alone = clockwise turn.\n"
-                      "• Letter + `'` (prime) = counter-clockwise turn.\n"
-                      "• Letter + `2` = 180° (double) turn.\n",
-                  style: TextStyle(
-                    color: kSoftTextColor,
-                    fontSize: 14.5,
-                    height: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-                const Text(
-                  "Faces:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "• U = Up (top)\n"
-                      "• D = Down (bottom)\n"
-                      "• L = Left\n"
-                      "• R = Right\n"
-                      "• F = Front (facing you)\n"
-                      "• B = Back\n",
-                  style: TextStyle(
-                    color: kSoftTextColor,
-                    fontSize: 14.5,
-                    height: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-                const Text(
-                  "Example:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "R U R' U' means:\n"
-                      "• R  = turn Right face clockwise\n"
-                      "• U  = turn Up face clockwise\n"
-                      "• R' = turn Right face counter-clockwise\n"
-                      "• U' = turn Up face counter-clockwise\n",
-                  style: TextStyle(
-                    color: kSoftTextColor,
-                    fontSize: 14.5,
-                    height: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

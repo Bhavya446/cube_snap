@@ -1,54 +1,49 @@
 import '../utils/constants.dart';
 
 class CubeConverter {
-  /// Validate cube color counts: each center color appears exactly 9 times.
+  /// Check each color index appears exactly 9 times.
   static String? validate(List<List<int>> faces) {
-    if (faces.length != 6 || faces.any((f) => f.length != 9)) {
-      return "Cube must have 6 faces, 9 stickers each.";
-    }
-
     final counts = List<int>.filled(kColorPalette.length, 0);
 
     for (final face in faces) {
-      for (final colorIndex in face) {
-        if (colorIndex < 0 || colorIndex >= kColorPalette.length) {
-          return "Invalid color index found.";
+      if (face.length != 9) {
+        return "Each face must have exactly 9 stickers.";
+      }
+      for (final idx in face) {
+        if (idx < 0 || idx >= kColorPalette.length) {
+          return "Invalid color index $idx detected.";
         }
-        counts[colorIndex]++;
+        counts[idx]++;
       }
     }
 
-    for (int i = 0; i < kColorPalette.length; i++) {
+    for (int i = 0; i < counts.length; i++) {
       if (counts[i] != 9) {
         return "Each color must appear exactly 9 times.\n"
             "Color ${kColorCodes[i]} appears ${counts[i]} times.";
       }
     }
 
-    return null; // OK
+    return null; // ok
   }
 
-  /// Convert faces into a 54-char string in URFDLB order.
-  ///
-  /// We map colors by their *center*:
-  /// center color 0 -> 'U', 1 -> 'R', 2 -> 'F', 3 -> 'D', 4 -> 'L', 5 -> 'B'
+  /// Convert 6×9 color indices into a Kociemba cube string (URFDLB).
   static String convert(List<List<int>> faces) {
-    const faceLetters = ['U', 'R', 'F', 'D', 'L', 'B'];
-
-    // Map colorIndex -> letter based on which face center uses that color.
-    final colorToLetter = <int, String>{};
+    // Build colorIndex -> faceChar mapping based on centers
+    final colorToChar = <int, String>{};
     for (int face = 0; face < 6; face++) {
-      final centerColor = kDefaultCenterColorIndices[face];
-      colorToLetter[centerColor] = faceLetters[face];
+      final centerColorIndex = faces[face][4];
+      colorToChar[centerColorIndex] = kFaceCodes[face];
     }
 
     final buffer = StringBuffer();
 
+    // Faces in Kociemba order: U, R, F, D, L, B (0..5 already)
     for (int face = 0; face < 6; face++) {
       for (int i = 0; i < 9; i++) {
         final colorIndex = faces[face][i];
-        final letter = colorToLetter[colorIndex] ?? '?';
-        buffer.write(letter);
+        final ch = colorToChar[colorIndex] ?? "?";
+        buffer.write(ch);
       }
     }
 

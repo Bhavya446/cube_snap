@@ -1,67 +1,39 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
+import 'utils/constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  runApp(const CubeSolverApp());
+  runApp(const CubeSnapApp());
 }
 
-class CubeSolverApp extends StatelessWidget {
-  const CubeSolverApp({super.key});
+class CubeSnapApp extends StatelessWidget {
+  const CubeSnapApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF0B0F19);
-    const card = Color(0xFF1A2031);
-    const primary = Color(0xFF6C63FF);
-
-    final baseTextTheme = GoogleFonts.poppinsTextTheme(
-      ThemeData.dark().textTheme,
-    );
+    final base = ThemeData.dark();
 
     return MaterialApp(
-      title: "Rubik's Cube Solver",
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: background,
-        colorScheme: ColorScheme.dark(
-          primary: primary,
-          secondary: const Color(0xFFFFB74D),
-          surface: card,
-          background: background,
+      title: 'CubeSnap',
+      theme: base.copyWith(
+        scaffoldBackgroundColor: kBackgroundDark,
+        textTheme: GoogleFonts.poppinsTextTheme(
+          base.textTheme.apply(bodyColor: Colors.white),
         ),
-        textTheme: baseTextTheme,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
+        colorScheme: base.colorScheme.copyWith(
+          primary: kPrimaryColor,
+          secondary: kAccentColor,
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primary,
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-            side: const BorderSide(color: primary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        ),
+        useMaterial3: true,
       ),
       home: const HomeScreen(),
     );

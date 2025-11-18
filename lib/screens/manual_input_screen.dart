@@ -1,5 +1,8 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../utils/constants.dart';
 import '../widgets/cube_face_editor.dart';
 import '../logic/cube_converter.dart';
@@ -18,11 +21,10 @@ class ManualInputScreen extends StatefulWidget {
 class _ManualInputScreenState extends State<ManualInputScreen> {
   int currentFace = 0;
 
-  /// 6 × 9 stickers
   final List<List<int>> cubeFaces =
   List.generate(6, (_) => List.filled(9, 0));
 
-  final random = Random();
+  final _rand = Random();
 
   @override
   void initState() {
@@ -30,44 +32,69 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
     _resetCubeToDefault();
   }
 
-  // ------------------------------------------------------------
-  // RESET HELPERS
-  // ------------------------------------------------------------
+  void _haptic() {
+    HapticFeedback.lightImpact();
+  }
 
   void _resetCubeToDefault() {
     for (int f = 0; f < 6; f++) {
-      final center = kDefaultCenterColorIndices[f];
+      final colorIndex = kDefaultCenterColorIndices[f];
       for (int i = 0; i < 9; i++) {
-        cubeFaces[f][i] = center;
+        cubeFaces[f][i] = colorIndex;
       }
     }
     setState(() {});
   }
 
   void _resetCurrentFace() {
-    final centerColor = cubeFaces[currentFace][4];
+    final colorIndex = cubeFaces[currentFace][4];
     for (int i = 0; i < 9; i++) {
-      cubeFaces[currentFace][i] = centerColor;
+      cubeFaces[currentFace][i] = colorIndex;
     }
     setState(() {});
   }
 
-  /// PPT ONLY — does NOT produce a solvable cube
+  /// Demo only: guarantees *exactly 9* of each color, but in random positions.
   Future<void> _setRandomDemoColors() async {
+    final pool = <int>[];
+    for (int color = 0; color < 6; color++) {
+      for (int i = 0; i < 9; i++) {
+        pool.add(color);
+      }
+    }
+    pool.shuffle(_rand);
+
+    int index = 0;
     for (int f = 0; f < 6; f++) {
       for (int i = 0; i < 9; i++) {
-        cubeFaces[f][i] = random.nextInt(kColorPalette.length);
+        cubeFaces[f][i] = pool[index++];
       }
     }
     setState(() {});
   }
 
-  // ------------------------------------------------------------
-  // SOLVE
-  // ------------------------------------------------------------
+  Future<void> _loadLastCube() async {
+    _haptic();
+    final loaded = await LastCubeStorage.loadCube();
+    if (loaded == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No saved cube found.")),
+      );
+      return;
+    }
+    setState(() {
+      for (int f = 0; f < 6; f++) {
+        cubeFaces[f] = List<int>.from(loaded[f]);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Last cube restored!")),
+    );
+  }
 
   Future<void> _onSolvePressed() async {
-    // VALIDATE
+    _haptic();
+
     final validationError = CubeConverter.validate(cubeFaces);
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,32 +106,31 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
       return;
     }
 
-    // SAVE LAST INPUT
-    await LastCubeStorage.saveCube(cubeFaces);
-
     final cubeString = CubeConverter.convert(cubeFaces);
     print("CUBE STRING SENT TO API: $cubeString");
 
-    // NICE LOADING SCREEN
+    // Save last cube locally
+    await LastCubeStorage.saveCube(cubeFaces);
+
+    // Beautiful loader
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => Center(
         child: Container(
-          width: 160,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: kCardColor,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white12),
           ),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset("assets/cube_loading.gif",
-                  height: 80, fit: BoxFit.contain),
-              const SizedBox(height: 12),
-              const Text(
-                "Contacting Solver…",
+              CircularProgressIndicator(color: kPrimaryColor),
+              SizedBox(height: 12),
+              Text(
+                "Contacting solver…",
                 style: TextStyle(color: Colors.white),
               ),
             ],
@@ -127,7 +153,7 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
     }
 
     if (!mounted) return;
-    Navigator.pop(context);
+    Navigator.pop(context); // close loader
 
     Navigator.push(
       context,
@@ -140,10 +166,6 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
     );
   }
 
-  // ------------------------------------------------------------
-  // UI
-  // ------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     final faceName = kFaceNames[currentFace];
@@ -151,28 +173,30 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: kMainBackgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: kMainBackgroundGradient),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // HEADER
+                // Header
                 Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new,
                           color: Colors.white70),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        _haptic();
+                        Navigator.pop(context);
+                      },
                     ),
                     const SizedBox(width: 4),
                     const Text(
                       "Manual Cube Input",
                       style: TextStyle(
-                        fontSize: 22,
                         color: Colors.white,
+                        fontSize: 22,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -184,48 +208,52 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
                 Text(
                   "$faceName ($faceCode)",
                   style: const TextStyle(
-                    fontSize: 28,
-                    color: Colors.white,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-
+                const SizedBox(height: 4),
                 Text(
                   "Face ${currentFace + 1} of 6",
-                  style: const TextStyle(color: kSoftTextColor),
+                  style:
+                  const TextStyle(color: kSoftTextColor, fontSize: 14),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
 
-                // GRID
                 CubeFaceEditor(
                   faceValues: cubeFaces[currentFace],
                   onTileTap: (index) {
+                    _haptic();
                     setState(() {
+                      final currentValue = cubeFaces[currentFace][index];
                       cubeFaces[currentFace][index] =
-                          (cubeFaces[currentFace][index] + 1) %
-                              kColorPalette.length;
+                          (currentValue + 1) % kColorPalette.length;
                     });
                   },
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
-                // PREV / NEXT
+                // Prev / Next
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
                       onPressed: currentFace == 0
                           ? null
-                          : () => setState(() => currentFace--),
+                          : () {
+                        _haptic();
+                        setState(() => currentFace--);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white10,
                         disabledBackgroundColor: Colors.black26,
+                        minimumSize: const Size(120, 44),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        minimumSize: const Size(120, 44),
                       ),
                       child: const Text("Prev",
                           style: TextStyle(color: Colors.white)),
@@ -233,35 +261,44 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
                     ElevatedButton(
                       onPressed: currentFace == 5
                           ? null
-                          : () => setState(() => currentFace++),
+                          : () {
+                        _haptic();
+                        setState(() => currentFace++);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
                         disabledBackgroundColor: Colors.black26,
+                        minimumSize: const Size(120, 44),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        minimumSize: const Size(120, 44),
                       ),
                       child: const Text("Next",
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: Colors.black)),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
 
-                // RESET ROW
+                // Reset / Load
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     TextButton.icon(
-                      onPressed: _resetCurrentFace,
+                      onPressed: () {
+                        _haptic();
+                        _resetCurrentFace();
+                      },
                       icon: const Icon(Icons.refresh, color: kSoftTextColor),
                       label: const Text("Reset Face",
                           style: TextStyle(color: Colors.white)),
                     ),
                     TextButton.icon(
-                      onPressed: _resetCubeToDefault,
+                      onPressed: () {
+                        _haptic();
+                        _resetCubeToDefault();
+                      },
                       icon: const Icon(Icons.replay, color: kSoftTextColor),
                       label: const Text("Reset Cube",
                           style: TextStyle(color: Colors.white)),
@@ -269,74 +306,93 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 10),
-
-                // SAVE + LOAD LAST CUBE
                 TextButton.icon(
-                  onPressed: () async {
-                    final loaded = await LastCubeStorage.loadCube();
-                    if (loaded != null) {
-                      setState(() {
-                        for (int f = 0; f < 6; f++) {
-                          cubeFaces[f] = List.from(loaded[f]);
-                        }
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Last cube restored!")),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("No saved cube found.")),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.history, color: Colors.white),
-                  label: const Text("Load Last Cube",
-                      style: TextStyle(color: Colors.white)),
+                  onPressed: _loadLastCube,
+                  icon: const Icon(Icons.history, color: Colors.white70),
+                  label: const Text(
+                    "Load Last Cube",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
 
                 const SizedBox(height: 10),
 
                 TextButton.icon(
-                  onPressed: _setRandomDemoColors,
+                  onPressed: () {
+                    _haptic();
+                    _setRandomDemoColors();
+                  },
                   icon: const Icon(Icons.auto_awesome, color: kAccentColor),
                   label: const Text(
-                    "Random Demo Colors (Not Solvable)",
+                    "Random Demo Colors (valid counts)",
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // GUIDE
+                const Text(
+                  "Tap tiles to cycle through colors:",
+                  style: TextStyle(color: kSoftTextColor),
+                ),
+                const SizedBox(height: 8),
+
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 18,
+                  runSpacing: 8,
+                  children: List.generate(kColorPalette.length, (i) {
+                    return Column(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: kColorPalette[i],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.black.withOpacity(0.4),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          kColorCodes[i],
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 18),
+
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.04),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.05)),
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
                   ),
                   child: const Text(
-                    "Rubik's Cube Color Rules:\n"
-                        "• Each face must use a single center color.\n"
-                        "• Each color must appear exactly 9 times.\n"
-                        "• Valid set:\n"
-                        "     U = White, R = Red, F = Green,\n"
-                        "     D = Blue, L = Orange, B = Yellow\n"
-                        "• If these rules break → solver returns 'invalid cube'.",
+                    "Tip: Centers define which color is U, R, F, D, L, B.\n"
+                        "Make sure each color appears exactly 9 times.\n"
+                        "The solver uses Kociemba notation.",
                     style: TextStyle(
                       color: kSoftTextColor,
-                      fontSize: 13,
-                      height: 1.3,
+                      fontSize: 12.5,
+                      height: 1.4,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // SOLVE BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -351,14 +407,15 @@ class _ManualInputScreenState extends State<ManualInputScreen> {
                     child: const Text(
                       "Solve Cube",
                       style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
               ],
             ),
           ),

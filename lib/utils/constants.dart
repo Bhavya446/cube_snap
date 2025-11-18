@@ -1,36 +1,30 @@
 import 'package:flutter/material.dart';
 
-/// ==== GLOBAL THEME COLORS ====
+/// ========= THEME =========
 
-const kBackgroundColor = Color(0xFF050812);     // main background
-const kCardColor       = Color(0xFF161B22);     // cards, panels
-const kPrimaryColor    = Color(0xFF4C8CFF);     // primary accent blue
-const kAccentColor     = Color(0xFF7AFDD6);     // mint highlight
-const kDangerColor     = Color(0xFFFF6F91);     // error/warning
-const kSoftTextColor   = Color(0xFF9BA4B5);     // secondary text
+const kBackgroundDark = Color(0xFF020817);
+const kBackgroundDark2 = Color(0xFF071423);
 
-/// Soft vertical gradient (can reuse)
-const LinearGradient kBackgroundGradient = LinearGradient(
-  colors: [
-    Color(0xFF050813),
-    Color(0xFF0D1117),
-  ],
-  begin: Alignment.topCenter,
-  end: Alignment.bottomCenter,
-);
+/// Neon cyan primary instead of purple
+const kPrimaryColor = Color(0xFF00E5FF); // neon cyan
+const kAccentColor = Color(0xFFFFB74D);  // warm accent
+const kDangerColor = Color(0xFFFF6F91);  // error / warning
+const kCardColor = Color(0xFF111827);    // glassy panels
+const kSoftTextColor = Color(0xFF9BA4B5);
 
-/// Global App Background Gradient
+/// Global gradient (G2 style)
 const LinearGradient kMainBackgroundGradient = LinearGradient(
   colors: [
-    Color(0xFF090E1A), // deep midnight blue
-    Color(0xFF131B2E), // dark indigo
+    Color(0xFF020817),
+    Color(0xFF071423),
+    Color(0xFF041725),
   ],
-  begin: Alignment.topCenter,
-  end: Alignment.bottomCenter,
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 );
 
-/// ==== CUBE META ====
-/// Order: U, R, F, D, L, B
+/// ========= CUBE META =========
+/// Faces in Kociemba order
 const List<String> kFaceNames = [
   "Up",
   "Right",
@@ -40,7 +34,6 @@ const List<String> kFaceNames = [
   "Back",
 ];
 
-/// Face codes used in legend / titles
 const List<String> kFaceCodes = [
   "U",
   "R",
@@ -50,19 +43,19 @@ const List<String> kFaceCodes = [
   "B",
 ];
 
-/// 6 sticker colors (nice contrast, dark-mode friendly)
+/// Neon cube colors (C2)
 const List<Color> kColorPalette = [
-  Color(0xFFFFD76A), // U - warm yellow
-  Color(0xFFFF6F6F), // R - coral red
-  Color(0xFF29D699), // F - teal green
-  Color(0xFF4DA8FF), // D - sky blue
-  Color(0xFFFFA64D), // L - orange
-  Color(0xFFB583FF), // B - lavender
+  Color(0xFFFFF176), // U - neon yellow
+  Color(0xFFFF5252), // R - neon red
+  Color(0xFF00E676), // F - neon green
+  Color(0xFF40C4FF), // D - neon cyan/blue
+  Color(0xFFFFB74D), // L - neon orange
+  Color(0xFFB388FF), // B - neon purple
 ];
 
-/// Codes (for legend & validation messages)
+/// Legend codes (for instruction row)
 const List<String> kColorCodes = [
-  "U",
+  "U", // yellow-ish
   "R",
   "F",
   "D",
@@ -70,5 +63,5 @@ const List<String> kColorCodes = [
   "B",
 ];
 
-/// Center indices for each face (0..5)
+/// Each face's default center color index
 const List<int> kDefaultCenterColorIndices = [0, 1, 2, 3, 4, 5];

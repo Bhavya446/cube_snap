@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
 class CubeFaceEditor extends StatelessWidget {
-  final List<int> faceValues; // exactly 9 ints [0..5]
+  final List<int> faceValues; // 9 ints
   final void Function(int index) onTileTap;
 
   const CubeFaceEditor({
@@ -16,15 +16,19 @@ class CubeFaceEditor extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1,
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: kCardColor,
-          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            colors: [kCardColor, Color(0xFF0F172A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: const [
             BoxShadow(
               color: Colors.black54,
-              blurRadius: 18,
-              offset: Offset(0, 10),
+              blurRadius: 20,
+              offset: Offset(0, 12),
             ),
           ],
         ),
@@ -33,8 +37,8 @@ class CubeFaceEditor extends StatelessWidget {
           itemCount: 9,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
           ),
           itemBuilder: (context, index) {
             final colorIndex = faceValues[index];
@@ -43,13 +47,13 @@ class CubeFaceEditor extends StatelessWidget {
             return GestureDetector(
               onTap: () => onTileTap(index),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: const Duration(milliseconds: 120),
                 decoration: BoxDecoration(
-                  color: color, // 🟦 flat color, no gradient
-                  borderRadius: BorderRadius.circular(8),
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF0F1823),
-                    width: 2,
+                    color: Colors.black.withOpacity(0.45),
+                    width: 1.4,
                   ),
                 ),
               ),

@@ -1,171 +1,226 @@
-                                   CubeSnap – Intelligent Rubik’s Cube Solver (Flutter + Python + Firebase)
-                      A modern, beautiful, AI-powered cube solver with animations, patterns, and real-time backend solving.
+CubeSnap – Intelligent Rubik’s Cube Solver
+(Flutter + Python + Firebase)
 
-Overview
+A modern, beautiful, AI-powered Rubik’s Cube solver with animations, patterns, and real-time backend solving powered by the Kociemba algorithm.
 
-CubeSnap is a full cross-platform Rubik’s Cube solver built using:
+📌 Overview
 
-Flutter → Frontend UI
-Python (Flask) → Kociemba solver backend
-Firebase Firestore → Save solve history
-Lottie animations → For UI polish
-SharedPreferences → Save last cube input
-Dark Neon UI → Custom-designed interface
-Kociemba 2-phase algorithm → Industry-standard solver
+CubeSnap is a cross-platform Rubik’s Cube solving application built using:
 
-The app allows users to manually input their cube, validate it, send it to the backend, and get a real-time optimal solution.
+Flutter — Frontend UI
+
+Python (Flask) — Backend solver (Kociemba algorithm)
+
+Firebase Firestore — Solve history storage
+
+SharedPreferences — Save last cube input
+
+Lottie Animations — Interactive UI
+
+Dark Neon UI — Modern, aesthetic design
+
+The user manually inputs cube colors, the app validates the cube, sends the configuration to a Python API, and receives the optimal solution.
 
 🧩 Key Features
 1️⃣ Manual Cube Input
 
-Tap tiles to change colors
+Tap tiles to change sticker colors
+
 Cycle through your 6 cube colors
-Navigation between 6 faces
-Reset a face or the entire cube
-Load last-saved cube state
-Random demo (invalid) cube generator for demos
 
-2️⃣ Real-time Solving (Python API)
+Navigate across 6 faces
 
-Uses Kociemba solver for optimal sequences
-Communicates with your backend:
+Reset individual face or entire cube
+
+Restore last saved cube
+
+“Random Demo” generator for presentation use
+
+2️⃣ Real-Time Solving (Python API)
+
+Backend uses Kociemba 2-phase algorithm
+
+POST request to your API endpoint:
+
 https://cube-solver-backend.onrender.com/solve
-Shows a loading animation while solving
-Displays full solution sequence
 
-3️⃣ Solve History (Firebase)
 
-Every solve stores:
-Cube scramble (Kociemba format)
-Solution (move sequence)
+Returns optimal solution (20-ish moves)
+
+Beautiful 3D cube loading animation
+
+Move sequence displayed cleanly
+
+3️⃣ Solve History (Firebase Firestore)
+
+Each solve includes:
+
+Cube scramble (Kociemba string)
+
+Full solution sequence
+
 Timestamp
 
-4️⃣ Beautiful Animated UI
+Automatically stored and displayed in the History screen.
 
-Neon cyan gradient background
-Lottie 3D cube animation on home screen
-Smooth navigation transitions
-Glass cards + modern fonts
+4️⃣ Stunning Animated UI
+
+Neon cyan gradient
+
+Animated 3D cube (Lottie) on home screen
+
+Smooth transitions
+
+Glass-like cards
+
+Google Fonts
+
 Haptic feedback on all buttons
 
-5️⃣ Rubik's Cube Pattern Library
+5️⃣ Cube Pattern Library
 
-Includes patterns such as:
+Includes common & beautiful Rubik’s Cube patterns:
+
 Checkerboard
+
 Cube-in-cube
+
 Six dots
-Opposite cross
+
 Adjacent cross
-And more (extendable)
 
-Each pattern page includes:
-Image preview
+Opposite cross
 
-Description
-One-click "Copy Moves" button
+More can be added
+
+Each pattern includes:
+
+Visual preview
+
+Pattern description
+
+One-tap “Copy Moves” button
 
 6️⃣ Cube Timer (Speedcubing)
 
 Start/stop timer
-Saves solves
-Displays average, best, worst
-Smooth digits + neon glowing UI
+
+Saves times
+
+Displays:
+
+Best time
+
+Worst time
+
+Average time
+
+Neon glowing UI
 
 7️⃣ Last Cube Memory
 
-Your last manual input is saved automatically.
-You can restore it instantly with: Load Last Cube.
+Your full cube input is saved locally.
+
+You can restore it instantly with Load Last Cube.
 
 8️⃣ Smart Validation System
 
-CubeSnap checks:
-Each color must appear exactly 9 times
-Opposite centers must match real cube rules
-Edge orientation & corner structure logic
-Prevents invalid scrambles
+The app validates:
+
+Each color appears exactly 9 times
+
+Correct center orientation
+
+Logical corner and edge counts
+
+Prevents invalid configurations
+
+If invalid, user sees error details like:
+
+Color U appears 10 times (must be 9)
 
 9️⃣ 3D Animated Loading Screen
 
-When solving, a rotating 3D Rubik’s Cube GIF appears, matching theme.
+While solving, a rotating 3D Rubik’s Cube GIF or animated Lottie plays.
 
-🧠 How It Works Internally
-⭐ 1. User Inputs Colors
+🧠 How CubeSnap Works Internally
+1. User Inputs Colors
 
-User taps the 3×3 grid for each face.
+User taps tiles on the 3×3 sticker grid for each face.
 
-⭐ 2. App Converts Colors → Kociemba Format
+2. Colors Converted to Kociemba Format
 
-Based on center colors:
+Based on the center sticker, faces map to:
 
-U = Yellow  
-R = Red  
-F = Green  
-D = Blue  
-L = Orange  
-B = Purple
+Letter	Face	Color (Your App)
+U	Up	Yellow
+R	Right	Red
+F	Front	Green
+D	Down	Blue
+L	Left	Orange
+B	Back	Purple
+3. Example Cube String Sent to Backend
+UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
 
-⭐ 3. String Sent to Backend
+4. Python Backend (Flask + Kociemba)
 
-Example:
+The backend receives JSON:
 
-"UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+{"cube": "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"}
 
-⭐ 4. Python Backend (Flask)
 
-Backend receives the cube string → sends to Kociemba → returns solution:
+Runs it through the Kociemba solver, returning e.g.:
 
-{"solution": "R U R' U' F2 ..."}
+R U R' U' F2 U' R U R' D2 ...
 
-⭐ 5. App Shows Moves + Saves to Firebase
+5. App Displays Moves & Saves to Firebase
+
+User can now view, save, copy, or practice the movements.
+
 📱 How to Use CubeSnap
-1️⃣ Open the App
 
-A beautiful neon-cyan cube animation appears.
+Open the app — animated cube welcome screen loads
 
-2️⃣ Go to Manual Input
+Choose Manual Input
 
-Tap tiles to match your physical cube.
+Fill in the cube colors
 
-3️⃣ Press Solve Cube
+Tap Solve Cube
 
-A 3D cube loading animation appears.
+View solution steps
 
-4️⃣ View Solution
+Check Solve History
 
-See step-by-step moves.
-You can copy or save them automatically.
-
-5️⃣ Open History
-
-View all past solves synced with Firebase.
-
-6️⃣ Explore Patterns
-
-Tap any pattern to view the algorithm.
-
-7️⃣ Use the Cube Timer
-
-Practice speedcubing and track results.
+Use Patterns and Cube Timer features
 
 🔧 Tech Stack Summary
-
 Frontend
+
 Flutter
+
 Dart
+
 Google Fonts
-Lottie
+
 SharedPreferences
+
+Lottie Animations
+
 Backend
+
 Python
+
 Flask
-Kociemba (Rubik’s algorithm)
+
+Kociemba
+
 Gunicorn
-Render.com hosting
+
+Hosted on Render.com
+
 Database
 
 Firebase Firestore
-
-SDK v2
 
 🛠 Folder Structure
 lib/
@@ -184,7 +239,7 @@ lib/
  │   ├─ constants.dart
  │   ├─ cube_solver_api.dart
  │   ├─ last_cube_storage.dart
- │   └─ etc.
+ │   └─ haptics.dart
  │
  ├─ logic/
  │   ├─ cube_converter.dart
@@ -195,44 +250,65 @@ assets/
  ├─ 3d_cube.gif
  └─ patterns/
 
-💡 Why Kociemba Algorithm?
+💡 Why Use the Kociemba Algorithm?
 
 The Kociemba 2-phase algorithm is used in:
 
-Google’s solver
+Google’s Rubik’s Cube solver
+
 Cube Explorer
-Most professional-speed solvers
 
-It:
+Most professional solving engines
+
+Benefits:
+
 Generates near-optimal solutions
-Works in under 50ms on backend
-Is extremely stable and predictable
 
-That's why it's perfect for CubeSnap.
+Fast (< 100ms on server)
 
-   Testing Guide
-✔ Test Valid Cube
-Fill all 6 faces correctly → should solve instantly.
+Accurate and stable
 
-✔ Test Invalid Cube
-API returns error → app shows message.
+Widely trusted in cubing community
 
-✔ Test History Saving
-Check Firebase → new entry appears.
+🧪 Testing Guide
+✔ Valid Cube Test
 
-✔ Test Last Cube Restore
-Restart app → Load Last Cube should work.
+Input a realistic cube → should solve instantly.
+
+✔ Invalid Cube Test
+
+Mismatch colors → app shows clear error.
+
+✔ History Test
+
+Solve → check Firebase for new document.
+
+✔ Last Cube Test
+
+Restart app → Load Last Cube must restore previous input.
+
+✔ Timer Test
+
+Start & stop timer → times saved & displayed.
 
 🏁 Final Summary
 
-CubeSnap is a complete Rubik’s Cube solving ecosystem, featuring:
+CubeSnap is a complete Rubik’s Cube ecosystem, featuring:
 
-Beautiful UI
-Real backend solver
-Pattern library
-Speedcube timer
-Save & restore
-Firebase integration
-Neon cyan theme
-Haptic feedback
-True Kociemba solving power
+A solver powered by Kociemba
+
+A modern neon animated UI
+
+Cube patterns
+
+Speedcubing timer
+
+Firebase solve history
+
+Local cube storage
+
+3D loading animations
+
+Smooth transitions & haptics
+
+It is one of the most polished Rubik’s Cube apps possible using Flutter + Python.

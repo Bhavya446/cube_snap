@@ -1,5 +1,5 @@
-                                                  CubeSnap – Intelligent Rubik’s Cube Solver (Flutter + Python + Firebase)
-                                A modern, beautiful, AI-powered cube solver with animations, patterns, and real-time backend solving.
+                                   CubeSnap – Intelligent Rubik’s Cube Solver (Flutter + Python + Firebase)
+                      A modern, beautiful, AI-powered cube solver with animations, patterns, and real-time backend solving.
 
 Overview
 
